@@ -1,0 +1,17 @@
+[
+  {"id": "c1", "title": "Introduction to Coding World with Python", "topic": "python-basics", "level": "beginner"},
+  {"id": "c2", "title": "Data Types in Python", "topic": "python-basics", "level": "beginner"},
+  {"id": "c3", "title": "Conditionals in Python", "topic": "python-basics", "level": "beginner"},
+  {"id": "c4", "title": "Loops in Python", "topic": "python-basics", "level": "beginner"},
+  {"id": "c5", "title": "Functions in Python", "topic": "python-basics", "level": "beginner"},
+  {"id": "c6", "title": "Object Oriented Programming in Python", "topic": "python-oop", "level": "intermediate"},
+  {"id": "c7", "title": "MultiThreading, Multiprocessing, GIL in Python", "topic": "python-concurrency", "level": "advanced"},
+  {"id": "c8", "title": "Asyncio in Python", "topic": "python-concurrency", "level": "advanced"},
+  {"id": "c9", "title": "API Setup & Integration", "topic": "backend-apis", "level": "intermediate"},
+  {"id": "c10", "title": "Building AI Agents and Agentic Workflows", "topic": "agentic-ai", "level": "advanced"},
+  {"id": "c11", "title": "Building Chat with PDF using RAG", "topic": "rag", "level": "advanced"},
+  {"id": "c12", "title": "Building Agentic Workflows with LangGraph", "topic": "agentic-ai", "level": "advanced"},
+  {"id": "c13", "title": "The Memory Layer – Building Short/Long AI Agents", "topic": "agent-memory", "level": "advanced"},
+  {"id": "c14", "title": "Model Context Protocol - MCP", "topic": "mcp", "level": "advanced"},
+  {"id": "c15", "title": "Mastering Docker for Developers", "topic": "devops", "level": "intermediate"}
+]

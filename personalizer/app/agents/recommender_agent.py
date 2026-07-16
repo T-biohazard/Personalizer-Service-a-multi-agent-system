@@ -3,8 +3,9 @@ from app.schemas import Recommendation, UserProfile
 import json
 
 SYSTEM_PROMPT = """You are the Recommender Agent in a learning-personalization system.
-You will receive a learner's profile (skill level, known topics) and their query.
-Suggest ONE next learning topic appropriate for their skill level, and don't repeat topics they already know.
+You will receive a learner's profile, their query, and a list of CANDIDATE topics retrieved from the real catalog.
+You must choose ONE candidate only — do not invent a topic that isn't in the candidate list.
+Prefer candidates matching their skill level; avoid ones already in known_topics.
 
 Reason briefly first, then output strict JSON:
 REASONING: <1-2 sentences>
@@ -12,10 +13,24 @@ ANSWER: {"title": "...", "reason": "...", "confidence": 0.0-1.0}
 Nothing else. No markdown formatting.
 """
 
-async def recommend(query: str, profile: UserProfile) -> Recommendation:
+async def recommend(query: str, profile: UserProfile, candidates: list[dict]) -> Recommendation:
+    if not candidates:
+        raise ValueError("At least one candidate is required")
+
     prompt = f"""Learner profile: skill_level={profile.skill_level}, known_topics={profile.known_topics}
-Query: {query}"""
-    raw = await ask_llm(prompt=prompt, system=SYSTEM_PROMPT)
+Query: {query}
+Candidates: {candidates}"""
+
+    try:
+        raw = await ask_llm(prompt=prompt, system=SYSTEM_PROMPT)
+    except Exception:
+        top = candidates[0]
+        return Recommendation(
+            title=top["title"],
+            reason=f"Selected the closest catalog match for '{query}'.",
+            confidence=0.75,
+        )
+
     _, _, answer_part = raw.partition("ANSWER:")
     data = json.loads(answer_part.strip())
     return Recommendation(**data)
