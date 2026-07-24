@@ -12,7 +12,12 @@ except ImportError:  # pragma: no cover - optional dependency in local dev
     Groq = None
 
 api_key = os.getenv("GROQ_API_KEY")
-client = Groq(api_key=api_key) if Groq and api_key else None
+client = None
+if Groq and api_key:
+    try:
+        client = Groq(api_key=api_key)
+    except Exception:  # pragma: no cover - fallback for environments with incomplete optional deps
+        client = None
 
 
 async def ask_llm(prompt: str, system: str = "", model: str = "llama-3.1-8b-instant") -> str:

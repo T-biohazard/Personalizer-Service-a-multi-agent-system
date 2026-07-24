@@ -1,6 +1,6 @@
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.graph_state import GraphState
 from app.models import InteractionRow, ProfileRow
 from app.schemas import UserProfile
 
@@ -23,3 +23,8 @@ async def get_or_create_profile(session: AsyncSession, user_id: str) -> UserProf
 async def log_interaction(session: AsyncSession, user_id: str, query: str) -> None:
     session.add(InteractionRow(user_id=user_id, query=query))
     await session.commit()
+
+
+async def profile_node(state: GraphState, session: AsyncSession) -> dict:
+    profile = await get_or_create_profile(session, state["user_id"])
+    return {"profile": profile}

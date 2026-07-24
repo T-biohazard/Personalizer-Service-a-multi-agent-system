@@ -1,12 +1,25 @@
 import json
-import chromadb
-from sentence_transformers import SentenceTransformer
 
-_embedder = SentenceTransformer("all-MiniLM-L6-v2")
-_client = chromadb.PersistentClient(path="./chroma_db")
-_collection = _client.get_or_create_collection("catalog")
+try:
+    import chromadb
+    from sentence_transformers import SentenceTransformer
+except ImportError:  # pragma: no cover - fallback for lightweight test environments
+    chromadb = None
+    SentenceTransformer = None
+
+if SentenceTransformer is not None and chromadb is not None:
+    _embedder = SentenceTransformer("all-MiniLM-L6-v2")
+    _client = chromadb.PersistentClient(path="./chroma_db")
+    _collection = _client.get_or_create_collection("catalog")
+else:
+    _embedder = None
+    _client = None
+    _collection = None
 
 def index_catalog(path: str = "data/catalog/courses.json"):
+    if _embedder is None or _collection is None:
+        raise RuntimeError("Vector store dependencies are not available")
+
     with open(path) as f:
         items = json.load(f)
 
@@ -18,7 +31,11 @@ def index_catalog(path: str = "data/catalog/courses.json"):
     _collection.upsert(ids=ids, documents=docs, metadatas=metadatas, embeddings=embeddings)
     print(f"Indexed {len(items)} catalog items.")
 
+
 def search(query: str, top_k: int = 3) -> list[dict]:
+    if _embedder is None or _collection is None:
+        return []
+
     query_embedding = _embedder.encode([query]).tolist()
     results = _collection.query(query_embeddings=query_embedding, n_results=top_k)
 

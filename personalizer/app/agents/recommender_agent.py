@@ -1,6 +1,8 @@
+import json
+
+from app.graph_state import GraphState
 from app.llm_client import ask_llm
 from app.schemas import Recommendation, UserProfile
-import json
 
 SYSTEM_PROMPT = """You are the Recommender Agent in a learning-personalization system.
 You will receive a learner's profile, their query, and a list of CANDIDATE topics retrieved from the real catalog.
@@ -12,6 +14,7 @@ REASONING: <1-2 sentences>
 ANSWER: {"title": "...", "reason": "...", "confidence": 0.0-1.0}
 Nothing else. No markdown formatting.
 """
+
 
 async def recommend(query: str, profile: UserProfile, candidates: list[dict]) -> Recommendation:
     if not candidates:
@@ -34,3 +37,17 @@ Candidates: {candidates}"""
     _, _, answer_part = raw.partition("ANSWER:")
     data = json.loads(answer_part.strip())
     return Recommendation(**data)
+
+
+async def recommender_node(state: GraphState) -> dict:
+    profile = state.get("profile")
+    query = state.get("query", "")
+    candidates = state.get("candidates", [])
+    if profile is None:
+        raise ValueError("Profile is required for recommender node")
+
+    recommendation = await recommend(query, profile, candidates)
+    return {
+        "recommendation": recommendation,
+        "attempts": state.get("attempts", 0) + 1,
+    }

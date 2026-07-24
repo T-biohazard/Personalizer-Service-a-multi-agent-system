@@ -5,3 +5,5 @@ groq
 python-dotenv
 sqlalchemy[asyncio]
 asyncpg
+langgraph
+langgraph-checkpoint-postgres
