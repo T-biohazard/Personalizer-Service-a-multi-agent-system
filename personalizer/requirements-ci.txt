@@ -9,9 +9,6 @@ langgraph
 langgraph-checkpoint-postgres
 celery
 redis
-sounddevice
-soundfile
-faster-whisper
 httpx
 ruff
 pytest
