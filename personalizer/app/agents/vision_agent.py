@@ -1,5 +1,3 @@
-import base64
-
 from app.graph_state import GraphState
 from app.llm_client import ask_vision
 

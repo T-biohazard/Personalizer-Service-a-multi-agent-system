@@ -1,2 +1,6 @@
 [lint]
-ignore = ["E501"]
+ignore = [
+    "E501",   # line too long
+    "B008",   # FastAPI Depends()/File() defaults are intentional patterns
+    "BLE001", # deliberate broad except fallback handling is acceptable here
+]
