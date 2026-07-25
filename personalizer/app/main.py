@@ -1,7 +1,8 @@
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.celery_app import celery_app
+from app.agents.profile_agent import get_or_create_profile
 from app.db import get_session
 from app.models import FeedbackRow, ProfileRow
 from app.tasks import run_personalizer_graph
@@ -10,9 +11,18 @@ app = FastAPI(title="Personalizer Service")
 
 
 @app.post("/ask")
-async def ask(user_id: str, query: str):
-    task = run_personalizer_graph.delay(user_id, query)
+async def ask(user_id: str, query: str, image: UploadFile | None = File(None)):
+    image_data = None
+    if image is not None and hasattr(image, "read"):
+        image_data = (await image.read()).decode("latin1")
+    task = run_personalizer_graph.delay(user_id, query, image_data)
     return {"job_id": task.id, "status": "pending"}
+
+
+@app.get("/profile/{user_id}")
+async def get_profile(user_id: str, session: AsyncSession = Depends(get_session)):
+    profile = await get_or_create_profile(session, user_id)
+    return profile.dict()
 
 
 @app.get("/jobs/{job_id}")

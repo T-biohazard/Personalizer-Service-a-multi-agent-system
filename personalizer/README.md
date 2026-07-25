@@ -84,6 +84,36 @@ This starts:
 - `api` on port `8000`
 - `worker` as a Celery process
 
+## Service capabilities
+
+This service provides:
+
+- **Asynchronous recommendation requests** via `POST /ask`.
+- **Job polling** via `GET /jobs/{job_id}` so the UI can stay responsive while the graph runs.
+- **Feedback persistence** via `POST /feedback` to update user profiles and improve future recommendations.
+- **Profile inspection** via `GET /profile/{user_id}` for UI status and known-topics display.
+- **Optional image context** in `/ask` through multipart upload.
+- **Local voice I/O support** via `app/voice_io.py` and `voice_main.py`.
+
+## Frontend
+
+A standalone browser UI is included as `personalizer-frontend.html`.
+
+How to use it:
+
+1. Start the backend:
+   ```bash
+   uvicorn app.main:app --reload
+   celery -A app.celery_app worker --loglevel=info
+   ```
+2. Open `personalizer-frontend.html` directly in your browser, or serve it from the repo folder:
+   ```bash
+   python -m http.server 5500
+   ```
+3. Visit `http://localhost:5500/personalizer-frontend.html`.
+
+This UI sends requests directly to `http://localhost:8000`, polls the job status, and displays the agent trace and graph suggestions in real time.
+
 ## Usage
 
 ### Submit a query

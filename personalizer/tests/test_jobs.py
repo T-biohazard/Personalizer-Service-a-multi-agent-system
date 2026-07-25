@@ -8,7 +8,7 @@ def test_ask_returns_job_id(monkeypatch):
     class DummyTask:
         id = "job-123"
 
-    def fake_delay(user_id, query):
+    def fake_delay(user_id, query, image_data=None):
         return DummyTask()
 
     monkeypatch.setattr(run_personalizer_graph, "delay", fake_delay)
