@@ -1,42 +1,35 @@
-from typing import Annotated
-
-from fastapi import Depends, FastAPI, File, Form, UploadFile
+from fastapi import Depends, FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agents.profile_agent import get_or_create_profile, log_interaction
+from app.celery_app import celery_app
 from app.db import get_session
-from app.graph import get_compiled_graph
-from app.schemas import Recommendation
+from app.models import FeedbackRow, ProfileRow
+from app.tasks import run_personalizer_graph
 
 app = FastAPI(title="Personalizer Service")
 
 
-@app.post("/ask", response_model=Recommendation)
-async def ask(
-    user_id: Annotated[str, Form()],
-    query: Annotated[str, Form()],
-    image: Annotated[UploadFile | None, File()] = None,
-    session: AsyncSession = Depends(get_session),
-):
-    profile = await get_or_create_profile(session, user_id)
-    await log_interaction(session, user_id, query)
+@app.post("/ask")
+async def ask(user_id: str, query: str):
+    task = run_personalizer_graph.delay(user_id, query)
+    return {"job_id": task.id, "status": "pending"}
 
-    image_bytes = await image.read() if image else None
 
-    graph = await get_compiled_graph()
-    result = await graph.ainvoke(
-        {
-            "user_id": user_id,
-            "query": query,
-            "profile": profile,
-            "candidates": [],
-            "recommendation": None,
-            "approved": False,
-            "attempts": 0,
-            "image_bytes": image_bytes,
-            "image_signal": None,
-        },
-        config={"configurable": {"thread_id": user_id}},
-    )
+@app.get("/jobs/{job_id}")
+async def get_job(job_id: str):
+    result = celery_app.AsyncResult(job_id)
+    if result.state == "PENDING":
+        return {"status": "pending"}
+    if result.state == "FAILURE":
+        return {"status": "failed", "error": str(result.result)}
+    return {"status": "done", "result": result.result}
 
-    return result["recommendation"]
+
+@app.post("/feedback")
+async def feedback(user_id: str, topic: str, liked: bool, session: AsyncSession = Depends(get_session)):
+    session.add(FeedbackRow(user_id=user_id, topic=topic, liked=liked))
+    profile_row = await session.get(ProfileRow, user_id)
+    if profile_row is not None and liked and topic not in profile_row.known_topics:
+        profile_row.known_topics = profile_row.known_topics + [topic]
+    await session.commit()
+    return {"status": "recorded"}
