@@ -11,3 +11,6 @@ class GraphState(TypedDict, total=False):
     recommendation: Recommendation | None
     approved: bool
     attempts: int
+    graph_suggestions: list[str]
+    image_bytes: bytes | None
+    image_signal: str | None

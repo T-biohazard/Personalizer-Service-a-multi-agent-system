@@ -5,8 +5,10 @@ from app.llm_client import ask_llm
 from app.schemas import Recommendation, UserProfile
 
 SYSTEM_PROMPT = """You are the Recommender Agent in a learning-personalization system.
-You will receive a learner's profile, their query, and a list of CANDIDATE topics retrieved from the real catalog.
+You will receive a learner's profile, their query, CANDIDATE topics retrieved from the real catalog,
+and GRAPH_SUGGESTIONS (topics that logically follow what they already know from a prerequisite graph).
 You must choose ONE candidate only — do not invent a topic that isn't in the candidate list.
+Prefer a candidate that also appears in graph_suggestions when possible; otherwise pick the best candidate alone.
 Prefer candidates matching their skill level; avoid ones already in known_topics.
 
 Reason briefly first, then output strict JSON:
@@ -16,13 +18,14 @@ Nothing else. No markdown formatting.
 """
 
 
-async def recommend(query: str, profile: UserProfile, candidates: list[dict]) -> Recommendation:
+async def recommend(query: str, profile: UserProfile, candidates: list[dict], graph_suggestions: list[str] | None = None) -> Recommendation:
     if not candidates:
         raise ValueError("At least one candidate is required")
 
     prompt = f"""Learner profile: skill_level={profile.skill_level}, known_topics={profile.known_topics}
 Query: {query}
-Candidates: {candidates}"""
+Candidates: {candidates}
+Graph suggestions (logical next topics): {graph_suggestions or []}"""
 
     try:
         raw = await ask_llm(prompt=prompt, system=SYSTEM_PROMPT)
@@ -46,7 +49,7 @@ async def recommender_node(state: GraphState) -> dict:
     if profile is None:
         raise ValueError("Profile is required for recommender node")
 
-    recommendation = await recommend(query, profile, candidates)
+    recommendation = await recommend(query, profile, candidates, state.get("graph_suggestions", []))
     return {
         "recommendation": recommendation,
         "attempts": state.get("attempts", 0) + 1,
